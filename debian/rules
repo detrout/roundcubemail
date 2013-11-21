@@ -1,0 +1,48 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_install:
+	mkdir -p $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/
+	cp -a \
+		bin \
+		composer.json-dist \
+		plugins \
+		program \
+		skins \
+		$(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/
+
+	install -pm 644 .htaccess $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/
+	install -pm 644 index.php $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/
+	install -pm 644 README.md $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/
+	install -pm 644 robots.txt $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/
+
+	mkdir -p $(CURDIR)/debian/roundcubemail/etc/roundcubemail/
+	cp -a config/config.inc.php.sample $(CURDIR)/debian/roundcubemail/etc/roundcubemail/config.inc.php
+	cp -a config/defaults.inc.php $(CURDIR)/debian/roundcubemail/etc/roundcubemail/defaults.inc.php
+	cp -a config/mimetypes.php $(CURDIR)/debian/roundcubemail/etc/roundcubemail/mimetypes.php
+
+	ln -s ../../../etc/roundcubemail $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/config
+
+	# Fix file permission
+	find $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/ -type f -exec chmod ugo-x {} \;
+	find $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/bin/ -type f -exec chmod ugo+x {} \;
+
+	# Copy plugin configuration files to the correct location
+	for conffile in $$(find $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/plugins -type f -name "config.inc.php.dist"); do \
+		plugin=$$(basename $$(dirname $$conffile)); \
+		mv $$conffile $(CURDIR)/debian/roundcubemail/etc/roundcubemail/$$plugin.inc.php; \
+		ln -s ../../../../../etc/roundcubemail/$$plugin.inc.php $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/plugins/$$plugin/config.inc.php; \
+	done
+
+	# Create the symbolic links for logs/ and temp/
+	ln -s ../../../var/lib/roundcubemail/ $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/temp
+	ln -s ../../../var/log/roundcubemail/ $(CURDIR)/debian/roundcubemail/usr/share/roundcubemail/logs
+
+	# Install apache2 configuration
+	mkdir -p $(CURDIR)/debian/roundcubemail/etc/apache2/sites-available
+	install -pm 644 $(CURDIR)/debian/conf/roundcubemail.conf $(CURDIR)/debian/roundcubemail/etc/apache2/sites-available/roundcubemail
+
+override_dh_compress:
+	dh_compress -Xsql   

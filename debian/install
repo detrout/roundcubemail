@@ -1,0 +1,4 @@
+bin usr/share/roundcubemail
+plugins usr/share/roundcubemail
+program usr/share/roundcubemail
+skins usr/share/roundcubemail

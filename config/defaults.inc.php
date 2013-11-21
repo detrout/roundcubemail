@@ -378,7 +378,7 @@ $config['mail_domain'] = '';
 // Password charset.
 // Use it if your authentication backend doesn't support UTF-8.
 // Defaults to ISO-8859-1 for backward compatibility
-$config['password_charset'] = 'ISO-8859-1';
+$config['password_charset'] = 'UTF-8';
 
 // How many seconds must pass between emails sent by a user
 $config['sendmail_delay'] = 0;
@@ -573,7 +573,7 @@ $config['spellcheck_dictionary'] = false;
 // - 'atd'     - install your own After the Deadline server or check with the people at http://www.afterthedeadline.com before using their API
 // Since Google shut down their public spell checking service, you need to 
 // connect to a Nox Spell Server when using 'googie' here. Therefore specify the 'spellcheck_uri'
-$config['spellcheck_engine'] = 'googie';
+$config['spellcheck_engine'] = 'pspell';
 
 // For locally installed Nox Spell Server or After the Deadline services,
 // please specify the URI to call it.
