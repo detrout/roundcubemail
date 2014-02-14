@@ -5,7 +5,7 @@
  | localization/<lang>/messages.inc                                      |
  |                                                                       |
  | Localization file of the Roundcube Webmail client                     |
- | Copyright (C) 2005-2013, The Roundcube Dev Team                       |
+ | Copyright (C) 2005-2014, The Roundcube Dev Team                       |
  |                                                                       |
  | Licensed under the GNU General Public License version 3 or            |
  | any later version with exceptions for skins & plugins.                |
@@ -33,6 +33,7 @@ $messages['invalidhost'] = 'Endereço de servidor inválido.';
 $messages['nomessagesfound'] = 'Nenhuma mensagem encontrada nessa caixa de mensagens';
 $messages['loggedout'] = 'Sua sessão foi finalizada com sucesso. Até logo!';
 $messages['mailboxempty'] = 'A caixa de mensagens está vazia';
+$messages['nomessages'] = 'Sem mensagens';
 $messages['refreshing'] = 'Atualizando...';
 $messages['loading'] = 'Carregando...';
 $messages['uploading'] = 'Enviando arquivo...';
@@ -82,6 +83,7 @@ $messages['norecipientwarning'] = 'Por favor, informe pelo menos um destinatári
 $messages['nosubjectwarning']  = 'O campo "Assunto" está vazio. Deseja incluí-lo agora?';
 $messages['nobodywarning'] = 'Enviar a mensagem sem texto?';
 $messages['notsentwarning'] = 'A mensagem não foi enviada. Deseja descartar sua mensagem?';
+$messages['restoresavedcomposedata'] = 'Uma mensagem criada anteriormente, mas não enviada, foi localizada.\n\nTítulo: $subject\nSalva em: $date\n\nDeseja restaurar esta mensagem?';
 $messages['noldapserver'] = 'Por favor, selecione um servidor LDAP para a pesquisa';
 $messages['nosearchname'] = 'Por favor, informe o nome do contato ou seu endereço de e-mail.';
 $messages['notuploadedwarning'] = 'Há anexos ainda não enviados. Aguarde ou cancele o envio.';

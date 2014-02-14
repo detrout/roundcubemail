@@ -1,3 +1,27 @@
+roundcubemail (1:1.1~dev20140214-0~kolab1) unstable; urgency=low
+
+  * New git snapshot from upstream
+
+ -- Jeroen van Meeuwen (Kolab Systems) <vanmeeuwen@kolabsys.com>  Fri, 14 Feb 2014 07:14:39 -0500
+
+roundcubemail (1:1.0~dev20140128-1~kolab1) unstable; urgency=low
+
+  * New git snapshot from upstream
+
+ -- Jeroen van Meeuwen (Kolab Systems) <vanmeeuwen@kolabsys.com>  Tue, 28 Jan 2014 07:14:39 -0500
+
+roundcubemail (1:1.0~dev20131125-1~kolab2) unstable; urgency=low
+
+  * Allow use of sort_folder_list() (was a private function)
+
+ -- Jeroen van Meeuwen (Kolab Systems) <vanmeeuwen@kolabsys.com>  Thu, 26 Dec 2013 07:14:39 -0500
+
+roundcubemail (1:1.0~dev20131125-1~kolab1) unstable; urgency=low
+
+  * New snapshot
+
+ -- Jeroen van Meeuwen (Kolab Systems) <vanmeeuwen@kolabsys.com>  Mon, 25 Nov 2013 07:14:39 -0500
+
 roundcubemail (1:1.0~dev20131031-1~kolab2) unstable; urgency=low
 
   * enhance/sync postinst script
