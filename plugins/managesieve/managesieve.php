@@ -41,9 +41,11 @@ class managesieve extends rcube_plugin
 
         // register actions
         $this->register_action('plugin.managesieve', array($this, 'managesieve_actions'));
+        $this->register_action('plugin.managesieve-action', array($this, 'managesieve_actions'));
         $this->register_action('plugin.managesieve-save', array($this, 'managesieve_save'));
 
         if ($this->rc->task == 'settings') {
+            $this->add_hook('settings_actions', array($this, 'settings_actions'));
             $this->init_ui();
         }
         else if ($this->rc->task == 'mail') {
@@ -71,6 +73,16 @@ class managesieve extends rcube_plugin
         $this->include_script('managesieve.js');
 
         $this->ui_initialized = true;
+    }
+
+    /**
+     * Adds Filters section in Settings
+     */
+    function settings_actions($args)
+    {
+        // register as settings action
+        $args['actions'][] = array('action' => 'plugin.managesieve', 'class' => 'filter', 'label' => 'filters', 'domain' => 'managesieve');
+        return $args;
     }
 
     /**

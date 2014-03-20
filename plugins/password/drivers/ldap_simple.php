@@ -113,7 +113,7 @@ class rcube_ldap_simple_password
             return PASSWORD_CRYPT_ERROR;
         }
 
-        $this->_debug("C: Bind $binddn [pass: $bindpw]");
+        $this->_debug("C: Bind $binddn, pass: **** [" . strlen($bindpw) . "]");
 
         // Bind
         if (!ldap_bind($ds, $binddn, $bindpw)) {
@@ -175,7 +175,7 @@ class rcube_ldap_simple_password
             return null;
         }
 
-        $this->_debug("C: Bind $search_user [pass: $search_pass]");
+        $this->_debug("C: Bind $search_user, pass: **** [" . strlen($search_pass) . "]");
 
         // Bind
         if (!ldap_bind($ds, $search_user, $search_pass)) {
@@ -187,6 +187,8 @@ class rcube_ldap_simple_password
 
         $search_base   = $rcmail->config->get('password_ldap_search_base');
         $search_filter = $rcmail->config->get('password_ldap_search_filter');
+
+        $search_base   = rcube_ldap_password::substitute_vars($search_base);
         $search_filter = rcube_ldap_password::substitute_vars($search_filter);
 
         $this->_debug("C: Search $search_base for $search_filter");

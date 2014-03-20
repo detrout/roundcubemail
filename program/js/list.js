@@ -20,7 +20,7 @@
 
 /**
  * Roundcube List Widget class
- * @contructor
+ * @constructor
  */
 function rcube_list_widget(list, p)
 {
@@ -32,10 +32,6 @@ function rcube_list_widget(list, p)
   this.list = list ? list : null;
   this.tagname = this.list ? this.list.nodeName.toLowerCase() : 'table';
   this.id_regexp = /^rcmrow([a-z0-9\-_=\+\/]+)/i;
-  this.thead;
-  this.tbody;
-  this.fixed_header;
-  this.frame = null;
   this.rows = {};
   this.selection = [];
   this.rowcount = 0;
@@ -91,8 +87,7 @@ init: function()
     var r, len, rows = this.tbody.childNodes;
 
     for (r=0, len=rows.length; r<len; r++) {
-      this.init_row(rows[r]);
-      this.rowcount++;
+      this.rowcount += this.init_row(rows[r]) ? 1 : 0;
     }
 
     this.init_header();
@@ -102,6 +97,8 @@ init: function()
     if (this.keyboard)
       rcube_event.add_listener({event:'keydown', object:this, method:'key_press'});
   }
+
+  return this;
 },
 
 
@@ -148,6 +145,8 @@ init_row: function(row)
 
     this.row_init(this.rows[uid]);  // legacy support
     this.triggerEvent('initrow', this.rows[uid]);
+
+    return true;
   }
 },
 
@@ -196,6 +195,12 @@ init_fixed_header: function()
 
     var me = this;
     $(window).resize(function(){ me.resize() });
+    $(window).scroll(function(){
+      var w = $(window);
+      me.fixed_header.css('marginLeft', (-w.scrollLeft()) + 'px');
+      if (!bw.webkit)
+        me.fixed_header.css('marginTop', (-w.scrollTop()) + 'px');
+    });
   }
   else {
     $(this.fixed_header).find('thead').replaceWith(clone);
@@ -222,6 +227,8 @@ resize: function()
     $(this.thead).find('tr td').each(function(index) {
       $(this).css('width', column_widths[index]);
     });
+
+    $(window).scroll();
 },
 
 /**
@@ -248,6 +255,9 @@ clear: function(sel)
   // reset scroll position (in Opera)
   if (this.frame)
     this.frame.scrollTop = 0;
+
+  // fix list header after removing any rows
+  this.resize();
 },
 
 
@@ -256,7 +266,7 @@ clear: function(sel)
  */
 remove_row: function(uid, sel_next)
 {
-  var node = this.rows[uid] ? this.rows[uid].obj : null;
+  var self = this, node = this.rows[uid] ? this.rows[uid].obj : null;
 
   if (!node)
     return;
@@ -268,6 +278,10 @@ remove_row: function(uid, sel_next)
 
   delete this.rows[uid];
   this.rowcount--;
+
+  // fix list header after removing any rows
+  clearTimeout(this.resize_timeout)
+  this.resize_timeout = setTimeout(function() { self.resize(); }, 50);
 },
 
 
@@ -276,7 +290,7 @@ remove_row: function(uid, sel_next)
  */
 insert_row: function(row, before)
 {
-  var tbody = this.tbody;
+  var self = this, tbody = this.tbody;
 
   // create a real dom node first
   if (row.nodeName === undefined) {
@@ -304,6 +318,10 @@ insert_row: function(row, before)
 
   this.init_row(row);
   this.rowcount++;
+
+  // fix list header after adding any rows
+  clearTimeout(this.resize_timeout)
+  this.resize_timeout = setTimeout(function() { self.resize(); }, 50);
 },
 
 /**
@@ -347,7 +365,7 @@ focus: function(e)
 
   // Un-focus already focused elements (#1487123, #1487316, #1488600, #1488620)
   // It looks that window.focus() does the job for all browsers, but not Firefox (#1489058)
-  $(':focus:not(body)').blur();
+  $('iframe,:focus:not(body)').blur();
   window.focus();
 
   if (e || (e = window.event))
@@ -412,15 +430,18 @@ drag_row: function(e, id)
   if (rcube_event.get_button(e) == 2)
     return true;
 
+  this.in_selection_before = e && e.istouch || this.in_selection(id) ? id : false;
+
   // selects currently unselected row
-  if (!(e && e.istouch || this.in_selection(id))) {
+  if (!this.in_selection_before) {
     var mod_key = rcube_event.get_modifier(e);
-    this.select_row(id, mod_key, false);
+    this.select_row(id, mod_key, true);
   }
 
   if (this.draggable && this.selection.length && this.in_selection(id)) {
     this.drag_start = true;
     this.drag_mouse_start = rcube_event.get_mouse_pos(e);
+
     rcube_event.add_listener({event:'mousemove', object:this, method:'drag_mouse_move'});
     rcube_event.add_listener({event:'mouseup', object:this, method:'drag_mouse_up'});
     if (bw.touch) {
@@ -448,11 +469,12 @@ click_row: function(e, id)
   var now = new Date().getTime(),
     dblclicked = now - this.rows[id].clicked < this.dblclick_time;
 
-  // selects (or unselects currently selected) row
-  if (!this.drag_active && !dblclicked)
+  // unselects currently selected row
+  if (!this.drag_active && !dblclicked && this.in_selection_before == id)
     this.select_row(id, rcube_event.get_modifier(e), true);
 
   this.drag_start = false;
+  this.in_selection_before = false;
 
   // row was double clicked
   if (this.rowcount && dblclicked && this.in_selection(id)) {
@@ -526,17 +548,18 @@ expand_row: function(e, id)
 
 collapse: function(row)
 {
+  var r, depth = row.depth,
+    new_row = row ? row.obj.nextSibling : null;
+
   row.expanded = false;
   this.triggerEvent('expandcollapse', { uid:row.uid, expanded:row.expanded, obj:row.obj });
-  var depth = row.depth;
-  var new_row = row ? row.obj.nextSibling : null;
-  var r;
 
   while (new_row) {
     if (new_row.nodeType == 1) {
-      var r = this.rows[new_row.uid];
+      r = this.rows[new_row.uid];
       if (r && r.depth <= depth)
         break;
+
       $(new_row).css('display', 'none');
       if (r.expanded) {
         r.expanded = false;
@@ -548,6 +571,7 @@ collapse: function(row)
 
   this.resize();
   this.triggerEvent('listupdate');
+
   return false;
 },
 
@@ -772,6 +796,7 @@ get_cell: function(row, index)
 select_row: function(id, mod_key, with_mouse)
 {
   var select_before = this.selection.join(',');
+
   if (!this.multiselect)
     mod_key = 0;
 
@@ -790,8 +815,10 @@ select_row: function(id, mod_key, with_mouse)
         break;
 
       case CONTROL_KEY:
-        if (with_mouse)
+        if (with_mouse) {
+          this.shift_start = id;
           this.highlight_row(id, true);
+        }
         break;
 
       case CONTROL_SHIFT_KEY:
@@ -802,6 +829,7 @@ select_row: function(id, mod_key, with_mouse)
         this.highlight_row(id, false);
         break;
     }
+
     this.multi_selecting = true;
   }
 
@@ -887,7 +915,7 @@ select_children: function(uid)
 
   for (i=0; i<len; i++)
     if (!this.in_selection(children[i]))
-      this.select_row(children[i], CONTROL_KEY);
+      this.select_row(children[i], CONTROL_KEY, true);
 },
 
 
@@ -941,7 +969,7 @@ _rowIndex: function(obj)
 in_selection: function(id)
 {
   for (var n in this.selection)
-    if (this.selection[n]==id)
+    if (this.selection[n] == id)
       return true;
 
   return false;
@@ -1037,9 +1065,26 @@ clear_selection: function(id)
 /**
  * Getter for the selection array
  */
-get_selection: function()
+get_selection: function(deep)
 {
-  return this.selection;
+  var res = $.merge([], this.selection);
+
+  // return children of selected threads even if only root is selected
+  if (deep !== false && res.length) {
+    for (var uid, uids, i=0, len=res.length; i<len; i++) {
+      uid = res[i];
+      if (this.rows[uid] && this.rows[uid].has_children && !this.rows[uid].expanded) {
+        uids = this.row_children(uid);
+        for (var j=0, uids_len=uids.length; j<uids_len; j++) {
+          uid = uids[j];
+          if (!this.in_selection(uid))
+            res.push(uid);
+        }
+      }
+    }
+  }
+
+  return res;
 },
 
 
@@ -1113,6 +1158,7 @@ highlight_children: function(id, status)
 key_press: function(e)
 {
   var target = e.target || {};
+
   if (this.focused != true || target.nodeName == 'INPUT' || target.nodeName == 'TEXTAREA' || target.nodeName == 'SELECT')
     return true;
 
@@ -1127,35 +1173,41 @@ key_press: function(e)
       // Stop propagation so that the browser doesn't scroll
       rcube_event.cancel(e);
       return this.use_arrow_key(keyCode, mod_key);
+
     case 32:
       rcube_event.cancel(e);
       return this.select_row(this.last_selected, mod_key, true);
+
     case 37: // Left arrow key
     case 39: // Right arrow key
-    case 107: // Plus sign on a numeric keypad
-    case 109: // Minus sign on a numeric keypad      
       // Stop propagation
       rcube_event.cancel(e);
-      var ret = this.use_plusminus_key(keyCode, mod_key);
+      var ret = this.use_arrow_key(keyCode, mod_key);
       this.key_pressed = keyCode;
       this.modkey = mod_key;
       this.triggerEvent('keypress');
       this.modkey = 0;
       return ret;
+
     case 36: // Home
       this.select_first(mod_key);
       return rcube_event.cancel(e);
+
     case 35: // End
       this.select_last(mod_key);
       return rcube_event.cancel(e);
+
     case 27:
       if (this.drag_active)
         return this.drag_mouse_up(e);
+
       if (this.col_drag_active) {
         this.selected_column = null;
         return this.column_drag_mouse_up(e);
       }
+
       return rcube_event.cancel(e);
+
     default:
       this.key_pressed = keyCode;
       this.modkey = mod_key;
@@ -1175,55 +1227,49 @@ key_press: function(e)
  */
 use_arrow_key: function(keyCode, mod_key)
 {
-  var new_row;
+  var new_row,
+    selected_row = this.rows[this.last_selected];
+
   // Safari uses the nonstandard keycodes 63232/63233 for up/down, if we're
   // using the keypress event (but not the keydown or keyup event).
   if (keyCode == 40 || keyCode == 63233) // down arrow key pressed
     new_row = this.get_next_row();
   else if (keyCode == 38 || keyCode == 63232) // up arrow key pressed
     new_row = this.get_prev_row();
+  else {
+    if (!selected_row || !selected_row.has_children)
+      return;
+
+    // expand
+    if (keyCode == 39) {
+      if (selected_row.expanded)
+        return;
+
+      if (mod_key == CONTROL_KEY || this.multiexpand)
+        this.expand_all(selected_row);
+      else
+        this.expand(selected_row);
+    }
+    // collapse
+    else {
+      if (!selected_row.expanded)
+        return;
+
+      if (mod_key == CONTROL_KEY || this.multiexpand)
+        this.collapse_all(selected_row);
+      else
+        this.collapse(selected_row);
+    }
+
+    this.update_expando(selected_row.uid, selected_row.expanded);
+
+    return false;
+  }
 
   if (new_row) {
     this.select_row(new_row.uid, mod_key, false);
     this.scrollto(new_row.uid);
   }
-
-  return false;
-},
-
-
-/**
- * Special handling method for +/- keys
- */
-use_plusminus_key: function(keyCode, mod_key)
-{
-  var selected_row = this.rows[this.last_selected];
-
-  if (!selected_row || !selected_row.has_children)
-    return;
-
-  // expand
-  if (keyCode == 39 || keyCode == 107) {
-    if (selected_row.expanded)
-      return;
-
-    if (mod_key == CONTROL_KEY || this.multiexpand)
-      this.expand_all(selected_row);
-    else
-      this.expand(selected_row);
-  }
-  // collapse
-  else {
-    if (!selected_row.expanded)
-      return;
-
-    if (mod_key == CONTROL_KEY || this.multiexpand)
-      this.collapse_all(selected_row);
-    else
-      this.collapse(selected_row);
-  }
-
-  this.update_expando(selected_row.uid, selected_row.expanded);
 
   return false;
 },
@@ -1275,60 +1321,71 @@ drag_mouse_move: function(e)
 
   if (this.drag_start) {
     // check mouse movement, of less than 3 pixels, don't start dragging
-    var m = rcube_event.get_mouse_pos(e);
+    var m = rcube_event.get_mouse_pos(e),
+      limit = 10, selection = [], self = this;
 
     if (!this.drag_mouse_start || (Math.abs(m.x - this.drag_mouse_start.x) < 3 && Math.abs(m.y - this.drag_mouse_start.y) < 3))
       return false;
 
+    // remember dragging start position
+    this.drag_start_pos = {left: m.x, top: m.y};
+
+    // initialize drag layer
     if (!this.draglayer)
       this.draglayer = $('<div>').attr('id', 'rcmdraglayer')
-        .css({ position:'absolute', display:'none', 'z-index':2000 })
+        .css({position: 'absolute', display: 'none', 'z-index': 2000})
         .appendTo(document.body);
+    else
+      this.draglayer.html('');
 
-    // also select childs of (collapsed) threads for dragging
-    var n, uid, selection = $.merge([], this.selection);
-    for (n in selection) {
-      uid = selection[n];
-      if (!this.rows[uid].expanded)
-        this.select_children(uid);
-    }
+    // get selected rows (in display order), don't use this.selection here
+    $(this.row_tagname() + '.selected', this.tbody).each(function() {
+      if (!String(this.id).match(self.id_regexp))
+        return;
 
-    // reset content
-    this.draglayer.html('');
+      var uid = RegExp.$1, row = self.rows[uid];
 
-    // get subjects of selected messages
-    var i, n, obj, me;
-    for (n=0; n<this.selection.length; n++) {
-      // only show 12 lines
-      if (n>12) {
-        this.draglayer.append('...');
-        break;
-      }
+      if (!row || $.inArray(uid, selection) > -1)
+        return;
 
-      me = this;
-      if (obj = this.rows[this.selection[n]].obj) {
-        $('> '+this.col_tagname(), obj).each(function(i,elem){
-          if (n == 0)
-            me.drag_start_pos = $(elem).offset();
+      selection.push(uid);
 
-          if (me.subject_col < 0 || (me.subject_col >= 0 && me.subject_col == i)) {
-            var subject = $(elem).text();
-
-            if (subject) {
-              // remove leading spaces
-              subject = $.trim(subject);
-              // truncate line to 50 characters
-              subject = (subject.length > 50 ? subject.substring(0, 50) + '...' : subject);
-
-              var entry = $('<div>').text(subject);
-              me.draglayer.append(entry);
-            }
-
-            return false;  // break
-          }
+      // also handle children of (collapsed) trees for dragging (they might be not selected)
+      if (row.has_children && !row.expanded)
+        $.each(self.row_children(uid), function() {
+          if ($.inArray(this, selection) > -1)
+            return;
+          selection.push(this);
         });
+
+      // break the loop asap
+      if (selection.length > limit + 1)
+        return false;
+    });
+
+    // append subject (of every row up to the limit) to the drag layer
+    $.each(selection, function(i, uid) {
+      if (i > limit) {
+        self.draglayer.append('...');
+        return false;
       }
-    }
+
+      $('> ' + self.col_tagname(), self.rows[uid].obj).each(function(n, cell) {
+        if (self.subject_col < 0 || (self.subject_col >= 0 && self.subject_col == n)) {
+          var subject = $(cell).text();
+
+          if (subject) {
+            // remove leading spaces
+            subject = $.trim(subject);
+            // truncate line to 50 characters
+            subject = (subject.length > 50 ? subject.substring(0, 50) + '...' : subject);
+
+            self.draglayer.append($('<div>').text(subject));
+            return false;
+          }
+        }
+      });
+    });
 
     this.draglayer.show();
     this.drag_active = true;
@@ -1402,6 +1459,9 @@ column_drag_mouse_move: function(e)
     if (!this.col_draglayer) {
       var lpos = $(this.list).offset(),
         cells = this.thead.rows[0].cells;
+
+      // fix layer position when list is scrolled
+      lpos.top += this.list.scrollTop + this.list.parentNode.scrollTop;
 
       // create dragging layer
       this.col_draglayer = $('<div>').attr('id', 'rcmcoldraglayer')
@@ -1513,7 +1573,7 @@ row_children: function(uid)
 
   while (row) {
     if (row.nodeType == 1) {
-      if ((r = this.rows[row.uid])) {
+      if (r = this.rows[row.uid]) {
         if (!r.depth || r.depth <= depth)
           break;
         res.push(r.uid);
@@ -1548,7 +1608,7 @@ add_dragfix: function()
  */
 del_dragfix: function()
 {
-  $('div.iframe-dragdrop-fix').each(function() { this.parentNode.removeChild(this); });
+  $('div.iframe-dragdrop-fix').remove();
 },
 
 

@@ -64,6 +64,7 @@ $labels['fromtoshort'] = '$from – $to of $count';
 $labels['copy']     = 'Copy';
 $labels['move']     = 'Move';
 $labels['moveto']   = 'Move to...';
+$labels['copyto']   = 'Copy to...';
 $labels['download'] = 'Download';
 $labels['open']     = 'Open';
 $labels['showattachment'] = 'Show';
@@ -231,6 +232,9 @@ $labels['spellcheck']    = 'Spell';
 $labels['checkspelling'] = 'Check spelling';
 $labels['resumeediting'] = 'Resume editing';
 $labels['revertto']      = 'Revert to';
+
+$labels['restore'] = 'Restore';
+$labels['restoremessage'] = 'Restore message?';
 
 $labels['responses'] = 'Responses';
 $labels['insertresponse'] = 'Insert a response';

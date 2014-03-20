@@ -1,6 +1,61 @@
 CHANGELOG Roundcube Webmail
 ===========================
 
+- Added toolbar button to move message in message view
+- Improve UI integration of ACL settings
+- Fix directories check in Installer on Windows (#1489576)
+- Fix issue when default_addressbook option is set to integer value (#1489407)
+- Fix Opera > 15 detection (#1489562)
+- Fix security issue in DomainFactory driver of Password plugin
+- Fix invalid X-Draft-Info on forwarded message draft (#1489587)
+
+RELEASE 1.0-rc
+--------------
+- Small CSS fix with message notice boxes in Larry skin (#1489497)
+- Include groups in contacts search on mail compose (#1489082)
+- Add mime-type mapping for .7z files (#1489512)
+- Invoke update scripts with php to circumvent execution restrictions (#1489322)
+- Fix drag & drop message/contact moving on touch device (#1489431)
+- Fix canned responses in HTML mode (#1489536)
+- Check/create default folders on every login not only the first (#1489423)
+- Update to jQuery-1.11.0 and jQuery-UI-1.9.2
+- Support SMTP socket context options via new config option 'smtp_conn_options'
+- Fix compatibility with PHP 5.2 in html.php file (#1489514)
+- Remove expand/collapse with plus/minus keys (on numeric keypad) (#1489513)
+- Fix issue where filesystem path was added to all-attachments (zip) file (#1489507)
+- Fix case-sensitivity of email addresses handling on compose (#1485499)
+- Don't alter Message-ID of a draft when sending (#1489409)
+- Fix issue where deprecated syntax for HTML lists was not handled properly (#1488768)
+- Display different icons when Trash folder is empty or full (#1485775)
+- Remember last position of more headers switch (#1488323)
+- Fix so message flags modified by another client are applied on the list on refresh (#1485186)
+- Fix broken text/* attachments when forwarding/editing a message (#1489426)
+- Improved minified files handling, added css minification (#1486988)
+- Fix handling of X-Forwarded-For header with multiple addresses (#1489481)
+- Fix border issue on folders list in classic skin (#1489473)
+- Implemented menu actions to copy/move messages, added folder-selector widget (#1484086)
+- Fix security rules in .htaccess preventing access to base URL without the ending slash (#1489477)
+- Fix regression where only first new folder was placed in correct place on the list (#1489472)
+- Fix issue where children of selected and collapsed thread were skipped on various actions (#1489457)
+- Fix issue where groups were not deleted when "Replace entire addressbook" option on contacts import was used (#1489420)
+- Fix unreliable mimetype tests in Installer (#1489453)
+- Fix performance of listing writeable folders (#1489451)
+
+RELEASE 1.0-beta
+----------------
+- Fix handling of invalid closing tags in HTML messages (#1489446)
+- Set real content-type for file downloads (#1489439)
+- Update TinyMCE to version 3.5.10 (#1489442)
+- Fix keyboard navigation in list widgets (#1489392)
+- Allow plugins to grab the reference of opened windows (#1489413)
+- Larry skin: Improved status message display for better visibility (#1488974)
+- Fix Internet Explorer 11 detection (#1489434)
+- Fix date column width to fit the widest possible date format (#1489368)
+- Move certain user preference options to a collapsed "advanced" block (#1488829)
+- Add file type icons for Powerpoint and Open Office presentations (#1489225)
+- Fix operations on folders with trailing spaces in name (#1489419)
+- Improve identity selection based on From: header (#1489378)
+- Fix issue where mails with inline images of the same name contained only the first image multiple times (#1489406)
 - Use left/right arrow keys to collapse/expand thread and spacebar to select a row, change Ctrl key behavior (#1489392)
 - Fix an issue where using arrow keys to go up a list can result in selected message being under headers (#1489403)
 - Fix an issue where Home/End keys don't focus list row properly, don't scrollTo properly (#1489396)
@@ -86,7 +141,7 @@ RELEASE 0.9.5
 -------------
 - Fix failing vCard import when email address field contains spaces (#1489386)
 - Fix default spell-check configuration after Google suspended their spell service
-- Fix vulnerability in handling _session argument of utils/save-prefs (#1489382)
+- Fix vulnerability in handling _session argument of utils/save-prefs [CVE-2013-6172] (#1489382)
 - Fix iframe onload for upload errors handling (#1489379)
 - Fix address matching in Return-Path header on identity selection (#1489374)
 - Fix text wrapping issue with long unwrappable lines (#1489371)

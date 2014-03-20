@@ -5,7 +5,7 @@
  | localization/<lang>/messages.inc                                      |
  |                                                                       |
  | Localization file of the Roundcube Webmail client                     |
- | Copyright (C) 2005-2013, The Roundcube Dev Team                       |
+ | Copyright (C) 2005-2014, The Roundcube Dev Team                       |
  |                                                                       |
  | Licensed under the GNU General Public License version 3 or            |
  | any later version with exceptions for skins & plugins.                |
@@ -34,7 +34,8 @@ $messages['invalidrequest'] = 'Invalid request! No data was saved.';
 $messages['invalidhost'] = 'Invalid server name.';
 $messages['nomessagesfound'] = 'No messages found in this mailbox.';
 $messages['loggedout'] = 'You have successfully terminated the session. Good bye!';
-$messages['mailboxempty'] = 'Mailbox is empty.';
+$messages['mailboxempty'] = 'Mailbox is empty';
+$messages['nomessages'] = 'No messages';
 $messages['refreshing'] = 'Refreshing...';
 $messages['loading'] = 'Loading...';
 $messages['uploading'] = 'Uploading file...';
@@ -84,6 +85,7 @@ $messages['norecipientwarning'] = 'Please enter at least one recipient.';
 $messages['nosubjectwarning']  = 'The "Subject" field is empty. Would you like to enter one now?';
 $messages['nobodywarning'] = 'Send this message without text?';
 $messages['notsentwarning'] = 'Message has not been sent. Do you want to discard your message?';
+$messages['restoresavedcomposedata'] = 'A previously composed but unsent message was found.\n\nSubject: $subject\nSaved: $date\n\nDo you want to restore this message?';
 $messages['noldapserver'] = 'Please select an ldap server to search.';
 $messages['nosearchname'] = 'Please enter a contact name or email address.';
 $messages['notuploadedwarning'] = 'Not all attachments have been uploaded yet. Please wait or cancel the upload.';

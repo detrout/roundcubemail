@@ -3,8 +3,8 @@
 /*
  +-----------------------------------------------------------------------+
  | This file is part of the Roundcube Webmail client                     |
- | Copyright (C) 2008-2012, The Roundcube Dev Team                       |
- | Copyright (C) 2011-2012, Kolab Systems AG                             |
+ | Copyright (C) 2008-2014, The Roundcube Dev Team                       |
+ | Copyright (C) 2011-2014, Kolab Systems AG                             |
  |                                                                       |
  | Licensed under the GNU General Public License version 3 or            |
  | any later version with exceptions for skins & plugins.                |
@@ -93,6 +93,13 @@ class rcube
      * @var rcube_plugin_api
      */
     public $plugins;
+
+    /**
+     * Instance of rcube_user class.
+     *
+     * @var rcube_user
+     */
+    public $user;
 
 
     /* private/protected vars */
@@ -642,10 +649,11 @@ class rcube
     /**
      * Load a localization package
      *
-     * @param string Language ID
-     * @param array  Additional text labels/messages
+     * @param string $lang  Language ID
+     * @param array  $add   Additional text labels/messages
+     * @param array  $merge Additional text labels/messages to merge
      */
-    public function load_language($lang = null, $add = array())
+    public function load_language($lang = null, $add = array(), $merge = array())
     {
         $lang = $this->language_prop(($lang ? $lang : $_SESSION['language']));
 
@@ -684,6 +692,11 @@ class rcube
         // append additional texts (from plugin)
         if (is_array($add) && !empty($add)) {
             $this->texts += $add;
+        }
+
+        // merge additional texts (from plugin)
+        if (is_array($merge) && !empty($merge)) {
+            $this->texts = array_merge($this->texts, $merge);
         }
     }
 
@@ -1108,7 +1121,20 @@ class rcube
         // log_driver == 'file' is assumed here
 
         $line = sprintf("[%s]: %s\n", $date, $line);
-        $log_dir  = self::$instance ? self::$instance->config->get('log_dir') : null;
+        $log_dir = null;
+
+        // per-user logging is activated
+        if (self::$instance && self::$instance->config->get('per_user_logging', false) && self::$instance->get_user_id()) {
+            $log_dir = self::$instance->get_user_log_dir();
+            if (empty($log_dir))
+                return false;
+        }
+        else if (!empty($log['dir'])) {
+            $log_dir = $log['dir'];
+        }
+        else if (self::$instance) {
+            $log_dir = self::$instance->config->get('log_dir');
+        }
 
         if (empty($log_dir)) {
             $log_dir = RCUBE_INSTALL_PATH . 'logs';
@@ -1146,7 +1172,6 @@ class rcube
         // handle PHP exceptions
         if (is_object($arg) && is_a($arg, 'Exception')) {
             $arg = array(
-                'type' => 'php',
                 'code' => $arg->getCode(),
                 'line' => $arg->getLine(),
                 'file' => $arg->getFile(),
@@ -1154,7 +1179,7 @@ class rcube
             );
         }
         else if (is_string($arg)) {
-            $arg = array('message' => $arg, 'type' => 'php');
+            $arg = array('message' => $arg);
         }
 
         if (empty($arg['code'])) {
@@ -1170,7 +1195,7 @@ class rcube
 
         $cli = php_sapi_name() == 'cli';
 
-        if (($log || $terminate) && !$cli && $arg['type'] && $arg['message']) {
+        if (($log || $terminate) && !$cli && $arg['message']) {
             $arg['fatal'] = $terminate;
             self::log_bug($arg);
         }
@@ -1198,7 +1223,7 @@ class rcube
      */
     public static function log_bug($arg_arr)
     {
-        $program = strtoupper($arg_arr['type']);
+        $program = strtoupper(!empty($arg_arr['type']) ? $arg_arr['type'] : 'php');
         $level   = self::get_instance()->config->get('debug_level');
 
         // disable errors for ajax requests, write to log instead (#1487831)
@@ -1284,6 +1309,20 @@ class rcube
         self::write_log($dest, sprintf("%s: %0.4f sec", $label, $diff));
     }
 
+    /**
+     * Setter for system user object
+     *
+     * @param rcube_user Current user instance
+     */
+    public function set_user($user)
+    {
+        if (is_object($user)) {
+            $this->user = $user;
+
+            // overwrite config with user preferences
+            $this->config->set_user_prefs((array)$this->user->get_prefs());
+        }
+    }
 
     /**
      * Getter for logged user ID.
@@ -1347,6 +1386,17 @@ class rcube
         }
     }
 
+    /**
+     * Get the per-user log directory
+     */
+    protected function get_user_log_dir()
+    {
+        $log_dir = $this->config->get('log_dir', RCUBE_INSTALL_PATH . 'logs');
+        $user_name = $this->get_user_name();
+        $user_log_dir = $log_dir . '/' . $user_name;
+
+        return !empty($user_name) && is_writable($user_log_dir) ? $user_log_dir : false;
+    }
 
     /**
      * Getter for logged user language code.
@@ -1536,6 +1586,10 @@ class rcube
                     $mailto,
                     !empty($response) ? join('; ', $response) : ''));
             }
+        }
+        else {
+            // allow plugins to catch sending errors with the same parameters as in 'message_before_send'
+            $this->plugins->exec_hook('message_send_error', $plugin + array('error' => $error));
         }
 
         if (is_resource($msg_body)) {
