@@ -1,6 +1,7 @@
 roundcubemail (1:1.0~dev20131031-1~det1) UNRELEASED; urgency=medium
 
   * allow using php5-fpm
+  * Add myself to uploaders
 
  -- Diane Trout <diane@ghic.org>  Thu, 20 Mar 2014 13:47:10 -0700
 
